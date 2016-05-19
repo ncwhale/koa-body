@@ -5,6 +5,7 @@
  *
  * @author  Daryl Lau (@dlau)
  * @author  Charlike Mike Reagent (@tunnckoCore)
+ * @author  Kouga (@Kouga_)
  * @api private
  */
 
@@ -41,31 +42,31 @@ function requestbody(opts) {
   opts.textLimit = 'textLimit' in opts ? opts.textLimit : '56kb';
   opts.strict = 'strict' in opts ? opts.strict : true;
 
-  return function *(next){
+  return async function (ctx, next){
     var body = {};
     // so don't parse the body in strict mode
-    if (!opts.strict || ["GET", "HEAD", "DELETE"].indexOf(this.method.toUpperCase()) === -1) {
-      if (this.is('json'))  {
-        body = yield buddy.json(this, {encoding: opts.encoding, limit: opts.jsonLimit});
+    if (!opts.strict || ["GET", "HEAD", "DELETE"].indexOf(ctx.method.toUpperCase()) === -1) {
+      if (ctx.is('json'))  {
+        body = await buddy.json(ctx, {encoding: opts.encoding, limit: opts.jsonLimit});
       }
-      else if (this.is('urlencoded')) {
-        body = yield buddy.form(this, {encoding: opts.encoding, limit: opts.formLimit});
+      else if (ctx.is('urlencoded')) {
+        body = await buddy.form(ctx, {encoding: opts.encoding, limit: opts.formLimit});
       }
-      else if (this.is('text')) {
-        body = yield buddy.text(this, {encoding: opts.encoding, limit: opts.textLimit});
+      else if (ctx.is('text')) {
+        body = await buddy.text(ctx, {encoding: opts.encoding, limit: opts.textLimit});
       }
-      else if (opts.multipart && this.is('multipart')) {
-        body = yield formy(this, opts.formidable);
+      else if (opts.multipart && ctx.is('multipart')) {
+        body = await formy(ctx, opts.formidable);
       }
     }
 
     if (opts.patchNode) {
-      this.req.body = body;
+      ctx.req.body = body;
     }
     if (opts.patchKoa) {
-      this.request.body = body;
+      ctx.request.body = body;
     }
-    yield next;
+    await next();
   };
 }
 
